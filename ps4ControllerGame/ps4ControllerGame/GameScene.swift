@@ -29,13 +29,33 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var runningTime : Int = 0
     var gameFinished = false
     
+    var gameControllersFound = false
+    
     override func didMove(to view: SKView) {
-        print("Called")
+        var noControllerFound = false
+        var indexNumber = 0
+        for controller in GCController.controllers() {
+        //Check to see whether it is an extended Game Controller (Such as a Nimbus)
+        if controller.extendedGamepad != nil {
+        controller.playerIndex = GCControllerPlayerIndex.init(rawValue: indexNumber)!
+        indexNumber += 1
+        setupControllerControls(controller: controller)
+                }
+        else{
+            noControllerFound = true
+            }
+        }
         
-        view.showsPhysics = true
+        if(noControllerFound == true){
+            observeForGameControllers()
+        }
+         
+        
+            //view.showsPhysics = true
         self.physicsWorld.contactDelegate = self
         
-        observeForGameControllers()
+        
+       
         box.position = CGPoint(x: 0, y: -200)
         box.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 40, height: 40))
         box.physicsBody?.isDynamic = true
@@ -59,7 +79,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let border = SKPhysicsBody(edgeLoopFrom: self.frame)
         border.restitution = 1
         border.isDynamic = true
-        border.categoryBitMask = 0b0001
+        border.categoryBitMask = 000100
         self.physicsBody = border
     }
     
@@ -107,15 +127,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     override func update(_ currentTime: TimeInterval) {
         
-        print("IsCalled")
-        if(self.isPaused == true){
-            print("Game Paused")
-        }
+        
+       
         
         box.physicsBody?.velocity = CGVector(dx: Double(xVal * 300.0), dy: Double(yVal * 500.0))
         box.physicsBody?.angularVelocity = CGFloat(-RxVal * 8)
       
-        box2.physicsBody?.velocity = CGVector(dx: Double(xVal2 * 300.0), dy: Double(yVal2 * 500.0))
+        box2.physicsBody?.velocity = CGVector(dx: Double(-xVal2 * 300.0), dy: Double(-yVal2 * 500.0))
         box2.physicsBody?.angularVelocity = CGFloat(-RxVal2 * 8)
         
         
@@ -130,7 +148,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
       //  print(runningTime)
         
-        if(runningTime == 5 && gameFinished == true){
+        if(runningTime == 3 && gameFinished == true){
             let newScene = startScene(size: CGSize(width: 400, height: 600))
             newScene.anchorPoint = CGPoint(x: 0.5, y: 0.5)
             newScene.scaleMode = .resizeFill
@@ -141,13 +159,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func observeForGameControllers(){
-        print("Called 2")
+    
         NotificationCenter.default.addObserver(self, selector: #selector(connectControllers), name: NSNotification.Name.GCControllerDidConnect, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(disconnectControllers), name: NSNotification.Name.GCControllerDidDisconnect, object: nil)
     }
     
     @objc func connectControllers() {
     print("Connected")
+    gameControllersFound = true
     //Unpause the Game if it is currently paused
     self.isPaused = false
     //Used to register the Nimbus Controllers to a specific Player Number
@@ -164,7 +183,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     @objc func disconnectControllers() {
     // Pause the Game if a controller is disconnected ~ This is mandated by Apple
-    self.isPaused = true
+   // self.isPaused = true
     print("Controller Disconnected")
     }
     
